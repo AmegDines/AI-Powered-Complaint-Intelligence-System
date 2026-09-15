@@ -1,0 +1,24 @@
+# Helpdesk Platform Checklist
+
+- `[x]` Level 1: Project Initialization & Monorepo Setup
+  - `[x]` Create `helpdesk_platform` monorepo directory
+  - `[x]` Initialize React frontend (Vite + TypeScript + TailwindCSS)
+  - `[x]` Initialize FastAPI backend structure
+  - `[x]` Initialize `ml` and `terraform` directories
+- `[x]` Level 2: Machine Learning Layer
+  - `[x]` Create synthetic ticket dataset generator
+  - `[x]` Train multiple models (Naive Bayes, Logistic Regression, Linear SVM, Random Forest)
+  - `[x]` Evaluate and automatically select the best performing model
+  - `[x]` Serialize the best model
+- `[x]` Level 3: Backend API & Database Integration
+  - `[x]` Set up SQLAlchemy and PostgreSQL models
+  - `[x]` Implement REST API for tickets and users
+  - `[x]` Integrate ML inference into ticket creation endpoint
+- `[x]` Level 4: Frontend Development
+  - `[x]` Build standard UI components with TailwindCSS
+  - `[x]` Create Ticket Submission portal
+  - `[x]` Create Admin Dashboard
+  - `[x]` Connect forms and dashboard to FastAPI
+- `[x]` Level 5: Containerization & AWS Deployment
+  - `[x]` Write Dockerfiles and `docker-compose.yml`
+  - `[x]` Write Terraform scripts for AWS EC2, RDS, and networking
