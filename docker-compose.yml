@@ -5,6 +5,8 @@ services:
     build: ./backend
     ports:
       - "8000:8000"
+    volumes:
+      - ./ml:/ml
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/helpdesk
     depends_on:
@@ -13,7 +15,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "80:80"
+      - "3000:80"
 
   db:
     image: postgres:15
