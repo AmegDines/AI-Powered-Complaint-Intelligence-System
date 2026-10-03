@@ -1,0 +1,141 @@
+# ===================================================
+# GitHub Actions CI/CD Pipeline
+# Trigger: Push to main branch
+# Flow:
+#  1. Build Docker images for frontend & backend
+#  2. Push images to Docker Hub (FREE)
+#  3. SSH into EC2 and rolling-restart K8s pods
+# ===================================================
+name: CI/CD — Build & Deploy to AWS K3s
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: Build and Push Docker Images
+  # ─────────────────────────────────────────────
+  build:
+    name: Build & Push Images
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.tag.outputs.tag }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Generate Image Tag (Git SHA)
+        id: tag
+        run: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx (faster builds, cache support)
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build & Push Backend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          # Tag with both :latest and :SHA for traceability
+          tags: |
+            ${{ env.DOCKER_USERNAME }}/helpdesk-backend:latest
+            ${{ env.DOCKER_USERNAME }}/helpdesk-backend:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & Push Frontend Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.DOCKER_USERNAME }}/helpdesk-frontend:latest
+            ${{ env.DOCKER_USERNAME }}/helpdesk-frontend:${{ steps.tag.outputs.tag }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Upload ML model to S3 (if changed)
+  # ─────────────────────────────────────────────
+  upload-model:
+    name: Upload ML Model to S3
+    runs-on: ubuntu-latest
+    needs: build
+    # Only run if the ml/ folder changed
+    if: |
+      contains(join(github.event.commits.*.modified, ','), 'ml/') ||
+      contains(join(github.event.commits.*.added, ','), 'ml/')
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Train ML Model
+        run: |
+          pip install pandas scikit-learn joblib
+          cd ml && python train.py
+          ls -lh ticket_classifier.joblib
+
+      - name: Upload Model to S3
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - run: aws s3 cp ml/ticket_classifier.joblib s3://${{ secrets.S3_BUCKET_NAME }}/ticket_classifier.joblib
+
+  # ─────────────────────────────────────────────
+  # JOB 3: Deploy to K3s via SSH
+  # ─────────────────────────────────────────────
+  deploy:
+    name: Deploy to AWS EC2 K3s
+    runs-on: ubuntu-latest
+    needs: [build, upload-model]
+    # Run deploy even if upload-model was skipped
+    if: always() && needs.build.result == 'success'
+
+    steps:
+      - name: Deploy via SSH to EC2
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 120s
+          script: |
+            set -e
+            export KUBECONFIG=/home/ubuntu/.kube/config
+
+            echo "=== Refreshing ML model from S3 ==="
+            aws s3 cp s3://${{ secrets.S3_BUCKET_NAME }}/ticket_classifier.joblib /opt/ml/ticket_classifier.joblib || echo "No model update"
+
+            echo "=== Rolling restart Backend ==="
+            kubectl rollout restart deployment helpdesk-backend
+
+            echo "=== Rolling restart Frontend ==="
+            kubectl rollout restart deployment helpdesk-frontend
+
+            echo "=== Waiting for rollout to complete ==="
+            kubectl rollout status deployment helpdesk-backend --timeout=120s
+            kubectl rollout status deployment helpdesk-frontend --timeout=120s
+
+            echo "=== Deployment complete! ==="
+            kubectl get pods

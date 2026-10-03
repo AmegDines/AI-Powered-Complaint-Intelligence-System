@@ -1,0 +1,33 @@
+# =============================================
+# Prometheus Configuration for Helpdesk App
+# Scrapes FastAPI backend metrics
+# =============================================
+global:
+  scrape_interval: 30s          # How often to collect metrics
+  evaluation_interval: 30s
+
+scrape_configs:
+  # Kubernetes node-level metrics (CPU, Memory, Disk)
+  - job_name: 'kubernetes-nodes'
+    kubernetes_sd_configs:
+      - role: node
+
+  # Scrape all pods that have the annotation:
+  # prometheus.io/scrape: "true"
+  - job_name: 'helpdesk-backend'
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        target_label: __address__
+        regex: (.+)
+        replacement: ${1}
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

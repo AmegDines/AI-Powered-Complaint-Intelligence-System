@@ -1,0 +1,87 @@
+# ---------------------------------------------------
+# Backend Deployment
+# Runs the FastAPI + ML model on Kubernetes (K3s)
+# ---------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helpdesk-backend
+  namespace: default
+  labels:
+    app: helpdesk-backend
+spec:
+  replicas: 1                    # 1 replica on t2.micro — RAM constraint
+  selector:
+    matchLabels:
+      app: helpdesk-backend
+  strategy:
+    type: RollingUpdate           # Zero-downtime deploys via CI/CD
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: helpdesk-backend
+      annotations:
+        prometheus.io/scrape: "true"   # Tells Prometheus to scrape metrics
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+      - name: backend
+        # CHANGE: Replace YOUR_DOCKERHUB with your Docker Hub username
+        image: YOUR_DOCKERHUB/helpdesk-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: database_url
+        - name: MODEL_PATH
+          value: "/ml/ticket_classifier.joblib"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "350Mi"          # Keep under free tier RAM budget
+            cpu: "300m"
+        volumeMounts:
+        - name: ml-model
+          mountPath: /ml
+          readOnly: true
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+      volumes:
+      - name: ml-model
+        hostPath:
+          path: /opt/ml            # EC2 local path where bootstrap downloaded the model
+          type: DirectoryOrCreate
+---
+# Backend Service — ClusterIP (internal only, exposed via Ingress)
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: default
+spec:
+  selector:
+    app: helpdesk-backend
+  ports:
+  - protocol: TCP
+    port: 8000
+    targetPort: 8000
+  type: ClusterIP
