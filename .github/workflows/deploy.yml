@@ -7,8 +7,8 @@ on:
 
 env:
   AWS_REGION: ap-south-1                # Mumbai, must match your ECR repos
-  BACKEND_REPO: helpdesk-backend        # ECR repository names (must already exist)
-  FRONTEND_REPO: helpdesk-frontend
+  BACKEND_REPO: intelli-helpdesk-backend        # ECR repository names (must already exist)
+  FRONTEND_REPO: intelli-helpdesk-frontend
   NAMESPACE: helpdesk
 
 jobs:
