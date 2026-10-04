@@ -177,9 +177,9 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = [var.allowed_ssh_cidr]
   }
 
-  # HTTP
+  # HTTP for Traefik
   ingress {
-    description = "HTTP"
+    description = "HTTP for Traefik"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -672,18 +672,34 @@ resource "aws_iam_role_policy" "ec2_ecr" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = [
-        "ecr:GetAuthorizationToken",
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:GetDownloadUrlForLayer",
-        "ecr:BatchGetImage",
-        "ecr:DescribeRepositories",
-        "ecr:ListImages"
-      ]
-      Resource = "*"
-    }]
+
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:CompleteLayerUpload",
+          "ecr:DescribeRepositories",
+          "ecr:InitiateLayerUpload",
+          "ecr:ListImages",
+          "ecr:PutImage",
+          "ecr:UploadLayerPart",
+          "ecr:BatchGetImage",
+          "ecr:GetDownloadUrlForLayer"
+        ]
+        Resource = [
+          "arn:aws:ecr:ap-south-1:111169963700:repository/intelli-helpdesk-backend",
+          "arn:aws:ecr:ap-south-1:111169963700:repository/intelli-helpdesk-frontend"
+        ]
+      }
+    ]
   })
 }
 resource "aws_ecr_repository" "frontend" {

@@ -1,0 +1,79 @@
+name: Deploy to AWS (ECR + K3s)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-south-1                # Mumbai, must match your ECR repos
+  BACKEND_REPO: helpdesk-backend        # ECR repository names (must already exist)
+  FRONTEND_REPO: helpdesk-frontend
+  NAMESPACE: helpdesk
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # GitHub runners are x86, same as EC2 t2.micro, so no architecture mismatch
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./helpdesk_platform/backend
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_REPO }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.BACKEND_REPO }}:${{ github.sha }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./helpdesk_platform/frontend
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_REPO }}:latest
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_REPO }}:${{ github.sha }}
+
+      - name: Deploy on EC2 (refresh ECR secret + restart pods)
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+          NAMESPACE: ${{ env.NAMESPACE }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: ECR_REGISTRY,AWS_REGION,NAMESPACE
+          script_stop: true
+          script: |
+            TOKEN=$(aws ecr get-login-password --region "$AWS_REGION")
+            sudo kubectl create secret docker-registry ecr-secret \
+              --docker-server="$ECR_REGISTRY" \
+              --docker-username=AWS \
+              --docker-password="$TOKEN" \
+              -n "$NAMESPACE" --dry-run=client -o yaml | sudo kubectl apply -f -
+
+            sudo kubectl rollout restart deployment/helpdesk-backend -n "$NAMESPACE"
+            sudo kubectl rollout restart deployment/helpdesk-frontend -n "$NAMESPACE"
+            sudo kubectl rollout status deployment/helpdesk-backend -n "$NAMESPACE" --timeout=180s
+            sudo kubectl rollout status deployment/helpdesk-frontend -n "$NAMESPACE" --timeout=180s
