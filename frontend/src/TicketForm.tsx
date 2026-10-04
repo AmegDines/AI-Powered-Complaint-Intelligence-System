@@ -11,7 +11,7 @@ export default function TicketForm() {
     setIsSubmitting(true);
     setMessage('');
     try {
-      const res = await fetch('http://localhost:8000/tickets/', {
+      const res = await fetch('/api/tickets/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description })

@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('http://localhost:8000/tickets/')
+    fetch('/api/tickets/')
       .then(res => res.json())
       .then(data => {
         setTickets(data);
