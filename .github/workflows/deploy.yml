@@ -36,7 +36,7 @@ jobs:
       - name: Build and push backend
         uses: docker/build-push-action@v6
         with:
-          context: ./helpdesk_platform/backend
+          context: ./backend
           platforms: linux/amd64
           push: true
           tags: |
@@ -46,7 +46,7 @@ jobs:
       - name: Build and push frontend
         uses: docker/build-push-action@v6
         with:
-          context: ./helpdesk_platform/frontend
+          context: ./frontend
           platforms: linux/amd64
           push: true
           tags: |
