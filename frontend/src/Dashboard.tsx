@@ -21,6 +21,7 @@ export default function Dashboard() {
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const fetchTickets = () => {
+    setLoading(true);
     fetch('/api/tickets/')
       .then(res => {
         if (!res.ok) throw new Error('Failed to fetch tickets');
@@ -106,7 +107,7 @@ export default function Dashboard() {
       {/* Toast Notification */}
       {notification && (
         <div
-          className={`fixed top-20 right-6 z-50 px-5 py-3.5 rounded-xl shadow-xl flex items-center gap-3 transition-all transform animate-in slide-in-from-top-4 duration-300 ${
+          className={`fixed top-24 right-6 z-50 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 transition-all transform animate-in slide-in-from-top-4 duration-300 ${
             notification.type === 'success'
               ? 'bg-emerald-600 text-white shadow-emerald-200/50'
               : 'bg-rose-600 text-white shadow-rose-200/50'
@@ -121,38 +122,85 @@ export default function Dashboard() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
             </svg>
           )}
-          <span className="font-semibold text-sm">{notification.message}</span>
+          <span className="font-bold text-sm">{notification.message}</span>
         </div>
       )}
 
-      {/* Header & Metrics */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      {/* Header and Live Refresh */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Admin Dashboard</h2>
-          <p className="text-slate-500 mt-1.5 text-base">
-            Manage, classify, and tag support tickets across departments.
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Admin Intelligence Console</h2>
+          <p className="text-slate-500 mt-1 text-sm sm:text-base font-medium">
+            Real-time automated ticket categorization, departmental routing, and resolution status.
           </p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          <div className="bg-white px-5 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-start min-w-[130px]">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Total</p>
-            <p className="text-2xl font-extrabold text-slate-800">{tickets.length}</p>
+        <button
+          onClick={fetchTickets}
+          disabled={loading}
+          className="self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+        >
+          <svg className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          <span>Refresh Data</span>
+        </button>
+      </div>
+
+      {/* Stats Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        {/* Total */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
-          <div className="bg-white px-5 py-3.5 rounded-2xl border border-amber-200/80 bg-amber-50/20 shadow-sm flex flex-col items-start min-w-[130px]">
-            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-500"></span> Not Resolved
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Tickets</p>
+            <p className="text-2xl font-extrabold text-slate-900 mt-0.5">{tickets.length}</p>
+          </div>
+        </div>
+
+        {/* Not Resolved */}
+        <div className="bg-white p-5 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-white via-white to-amber-50/30 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 flex-shrink-0">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Not Resolved
             </p>
-            <p className="text-2xl font-extrabold text-amber-700">{notResolvedCount}</p>
+            <p className="text-2xl font-extrabold text-amber-700 mt-0.5">{notResolvedCount}</p>
           </div>
-          <div className="bg-white px-5 py-3.5 rounded-2xl border border-emerald-200/80 bg-emerald-50/20 shadow-sm flex flex-col items-start min-w-[130px]">
-            <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider mb-1 flex items-center gap-1.5">
+        </div>
+
+        {/* Resolved */}
+        <div className="bg-white p-5 rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-white via-white to-emerald-50/30 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 flex-shrink-0">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Resolved
             </p>
-            <p className="text-2xl font-extrabold text-emerald-700">{resolvedCount}</p>
+            <p className="text-2xl font-extrabold text-emerald-700 mt-0.5">{resolvedCount}</p>
           </div>
-          <div className="bg-white px-5 py-3.5 rounded-2xl border border-rose-200/80 bg-rose-50/20 shadow-sm flex flex-col items-start min-w-[130px]">
-            <p className="text-xs font-bold text-rose-500 uppercase tracking-wider mb-1">High Priority</p>
-            <p className="text-2xl font-extrabold text-rose-600">{highPriorityCount}</p>
+        </div>
+
+        {/* High Priority */}
+        <div className="bg-white p-5 rounded-2xl border border-rose-200/80 bg-gradient-to-br from-white via-white to-rose-50/30 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center text-rose-600 flex-shrink-0">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-rose-500 uppercase tracking-wider">High Priority</p>
+            <p className="text-2xl font-extrabold text-rose-600 mt-0.5">{highPriorityCount}</p>
           </div>
         </div>
       </div>
@@ -160,12 +208,12 @@ export default function Dashboard() {
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         {/* Filter Tabs */}
-        <div className="inline-flex bg-slate-200/60 p-1 rounded-xl border border-slate-200">
+        <div className="inline-flex bg-slate-200/70 p-1 rounded-2xl border border-slate-200">
           <button
             onClick={() => setFilterTab('ALL')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
               filterTab === 'ALL'
-                ? 'bg-white text-indigo-600 shadow-sm'
+                ? 'bg-white text-indigo-700 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
@@ -173,7 +221,7 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => setFilterTab('NOT_RESOLVED')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
               filterTab === 'NOT_RESOLVED'
                 ? 'bg-white text-amber-700 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
@@ -184,7 +232,7 @@ export default function Dashboard() {
           </button>
           <button
             onClick={() => setFilterTab('RESOLVED')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
               filterTab === 'RESOLVED'
                 ? 'bg-white text-emerald-700 shadow-sm'
                 : 'text-slate-600 hover:text-slate-900'
@@ -196,9 +244,9 @@ export default function Dashboard() {
         </div>
 
         {/* Search Input */}
-        <div className="relative min-w-[260px]">
+        <div className="relative min-w-[280px]">
           <svg
-            className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"
+            className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -209,51 +257,57 @@ export default function Dashboard() {
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search tickets..."
-            className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm"
+            placeholder="Search by ID, title, or category..."
+            className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl placeholder:text-slate-400 text-slate-900 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 shadow-2xs font-medium"
           />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Tickets Table */}
-      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden relative">
+      {/* Tickets Table Card */}
+      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/80 overflow-hidden">
         {loading ? (
           <div className="p-20 text-center text-slate-500 flex flex-col items-center justify-center">
             <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
-            <p className="font-medium text-lg">Loading tickets...</p>
+            <p className="font-bold text-base text-slate-700">Loading tickets from database...</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-50/90 text-slate-500 border-b border-slate-200">
-                <tr>
-                  <th className="px-6 py-4 font-bold tracking-wide uppercase text-xs">ID</th>
-                  <th className="px-6 py-4 font-bold tracking-wide uppercase text-xs">Issue Title</th>
-                  <th className="px-6 py-4 font-bold tracking-wide uppercase text-xs">AI Category</th>
-                  <th className="px-6 py-4 font-bold tracking-wide uppercase text-xs">Department</th>
-                  <th className="px-6 py-4 font-bold tracking-wide uppercase text-xs">Priority</th>
-                  <th className="px-6 py-4 font-bold tracking-wide uppercase text-xs">Status</th>
-                  <th className="px-6 py-4 font-bold tracking-wide uppercase text-xs text-right">Tag / Action</th>
+            <table className="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-100/70 text-slate-600 border-b border-slate-200 text-xs uppercase font-extrabold tracking-wider">
+                  <th className="px-6 py-4.5">Ticket</th>
+                  <th className="px-6 py-4.5">Issue Details</th>
+                  <th className="px-6 py-4.5">AI Classification</th>
+                  <th className="px-6 py-4.5">Department</th>
+                  <th className="px-6 py-4.5">Priority</th>
+                  <th className="px-6 py-4.5">Status</th>
+                  <th className="px-6 py-4.5 text-right">Tag Resolution</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredTickets.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-8 py-16 text-center text-slate-500 text-base">
-                      <div className="flex flex-col items-center justify-center">
-                        <svg className="w-12 h-12 text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="1.5"
-                            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                          />
-                        </svg>
-                        <span className="font-medium">
+                    <td colSpan={7} className="px-8 py-20 text-center text-slate-500">
+                      <div className="flex flex-col items-center justify-center max-w-sm mx-auto">
+                        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+                          <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                          </svg>
+                        </div>
+                        <h4 className="font-bold text-slate-800 text-base">No Tickets Found</h4>
+                        <p className="text-slate-400 text-xs mt-1">
                           {tickets.length === 0
-                            ? 'No tickets found in the system.'
-                            : 'No tickets match the selected filter.'}
-                        </span>
+                            ? 'There are currently no tickets logged in the database.'
+                            : 'No tickets matched your current filter criteria.'}
+                        </p>
                       </div>
                     </td>
                   </tr>
@@ -265,93 +319,102 @@ export default function Dashboard() {
                     return (
                       <tr
                         key={t.id}
-                        className={`transition-colors group ${
-                          resolved ? 'bg-slate-50/40 hover:bg-slate-50' : 'hover:bg-slate-50/80'
+                        className={`transition-colors duration-150 ${
+                          resolved ? 'bg-slate-50/50 hover:bg-slate-50' : 'hover:bg-slate-50/80'
                         }`}
                       >
-                        {/* ID */}
-                        <td className="px-6 py-4 font-bold text-slate-400 group-hover:text-slate-600 transition-colors">
-                          #{t.id}
-                        </td>
-
-                        {/* Title */}
-                        <td className="px-6 py-4">
-                          <span className={`font-semibold text-base ${resolved ? 'text-slate-600 line-through decoration-slate-300' : 'text-slate-800'}`}>
-                            {t.title}
+                        {/* Ticket ID */}
+                        <td className="px-6 py-4.5 font-bold text-slate-400">
+                          <span className="font-mono text-xs bg-slate-100 px-2 py-1 rounded-md text-slate-700 border border-slate-200">
+                            #{t.id}
                           </span>
                         </td>
 
-                        {/* Category */}
-                        <td className="px-6 py-4">
+                        {/* Title & Desc */}
+                        <td className="px-6 py-4.5 max-w-xs sm:max-w-sm">
+                          <div className={`font-bold text-sm ${resolved ? 'text-slate-500 line-through decoration-slate-300' : 'text-slate-900'}`}>
+                            {t.title}
+                          </div>
+                          {t.description && (
+                            <div className="text-xs text-slate-500 mt-1 line-clamp-1 truncate">
+                              {t.description}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* AI Classification */}
+                        <td className="px-6 py-4.5">
                           <div className="flex items-center gap-2">
-                            <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg font-bold text-xs border border-indigo-100/60">
-                              {t.predicted_category || 'General'}
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/70 shadow-2xs">
+                              <svg className="w-3 h-3 text-indigo-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                              </svg>
+                              <span>{t.predicted_category || 'General'}</span>
                             </span>
                             {t.confidence ? (
-                              <div
-                                className="flex items-center gap-1 text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100 text-xs font-bold"
-                                title={`Confidence: ${(t.confidence * 100).toFixed(0)}%`}
-                              >
-                                <svg className="w-3 h-3 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
-                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                </svg>
-                                <span>{(t.confidence * 100).toFixed(0)}%</span>
-                              </div>
+                              <span className="text-[11px] font-bold text-slate-400">
+                                {(t.confidence * 100).toFixed(0)}%
+                              </span>
                             ) : null}
                           </div>
                         </td>
 
                         {/* Department */}
-                        <td className="px-6 py-4 text-slate-600 font-semibold">{t.department}</td>
+                        <td className="px-6 py-4.5 text-xs font-bold text-slate-700">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200/60">
+                            <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span>{t.department}</span>
+                          </div>
+                        </td>
 
                         {/* Priority */}
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4.5">
                           <span
-                            className={`px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border ${
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold inline-flex items-center gap-1.5 border shadow-2xs ${
                               t.priority === 'HIGH'
-                                ? 'bg-rose-50 text-rose-700 border-rose-200/60 shadow-sm shadow-rose-100/50'
-                                : 'bg-slate-100 text-slate-700 border-slate-200 shadow-sm'
+                                ? 'bg-rose-50 text-rose-700 border-rose-200'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
                             }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                t.priority === 'HIGH'
-                                  ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.8)]'
-                                  : 'bg-slate-400'
+                              className={`w-2 h-2 rounded-full ${
+                                t.priority === 'HIGH' ? 'bg-rose-500 animate-pulse' : 'bg-slate-400'
                               }`}
                             ></span>
-                            {t.priority}
+                            <span>{t.priority}</span>
                           </span>
                         </td>
 
                         {/* Status Badge */}
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4.5">
                           {resolved ? (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-sm">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
                               <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                               </svg>
                               <span>Resolved</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200/80 shadow-sm">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                               <span>Not Resolved</span>
                             </span>
                           )}
                         </td>
 
-                        {/* Tagging Action Button */}
-                        <td className="px-6 py-4 text-right">
+                        {/* Resolution Tagging Button */}
+                        <td className="px-6 py-4.5 text-right">
                           {resolved ? (
                             <button
                               onClick={() => handleUpdateStatus(t.id, 'Not Resolved')}
                               disabled={isUpdating}
                               title="Re-open ticket as Not Resolved"
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 active:scale-95 transition-all border border-slate-200/80 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/80 transition-all cursor-pointer disabled:opacity-50 active:scale-95 shadow-2xs"
                             >
                               {isUpdating ? (
-                                <div className="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
                               ) : (
                                 <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -363,13 +426,13 @@ export default function Dashboard() {
                             <button
                               onClick={() => handleUpdateStatus(t.id, 'Resolved')}
                               disabled={isUpdating}
-                              title="Mark ticket as Resolved"
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 transition-all shadow-sm shadow-emerald-200/60 hover:shadow disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              title="Tag ticket as Resolved"
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 border border-emerald-500/30 transition-all cursor-pointer disabled:opacity-50 active:scale-95 shadow-sm shadow-emerald-200"
                             >
                               {isUpdating ? (
-                                <div className="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"></div>
+                                <div className="w-3 h-3 border-2 border-white/60 border-t-white rounded-full animate-spin"></div>
                               ) : (
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
                                 </svg>
                               )}
