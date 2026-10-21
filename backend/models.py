@@ -12,5 +12,5 @@ class Ticket(Base):
     department = Column(String)
     priority = Column(String)
     confidence = Column(Float)
-    status = Column(String, default="OPEN")
+    status = Column(String, default="Not Resolved")
     created_at = Column(DateTime, default=datetime.utcnow)

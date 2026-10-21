@@ -17,7 +17,12 @@ app.add_middleware(
 )
 
 app.include_router(tickets.router)
+app.include_router(tickets.router, prefix="/api")
 
 @app.get("/")
 def root():
     return {"message": "API is running"}
+
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
