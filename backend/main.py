@@ -25,4 +25,9 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    is_sqlite = "sqlite" in str(engine.url)
+    return {
+        "status": "healthy",
+        "database": "sqlite (ephemeral - data will be lost on pod restart)" if is_sqlite else "postgresql (persistent RDS)",
+        "persistent_storage": not is_sqlite
+    }
