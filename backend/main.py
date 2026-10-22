@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import models
 from database import engine
+from ml_service import ml_service
 from routers import tickets
 
 models.Base.metadata.create_all(bind=engine)
@@ -29,5 +30,7 @@ def health():
     return {
         "status": "healthy",
         "database": "sqlite (ephemeral - data will be lost on pod restart)" if is_sqlite else "postgresql (persistent RDS)",
-        "persistent_storage": not is_sqlite
+        "persistent_storage": not is_sqlite,
+        "model": "ready" if ml_service.is_ready else "unavailable",
+        "model_path": ml_service.model_path,
     }
