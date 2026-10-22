@@ -13,6 +13,9 @@ __pycache__/
 *.pkl
 tickets.csv
 
+# The inference artifact is required by the production backend image.
+!ml/ticket_classifier.joblib
+
 # Node/Frontend
 node_modules/
 dist/
